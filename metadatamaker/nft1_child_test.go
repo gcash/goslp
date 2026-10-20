@@ -34,6 +34,24 @@ func TestNft1ChildCreateOpReturnGenesis(t *testing.T) {
 	}
 }
 
+// TestCreateOpReturnMintTokenTypes checks that CreateOpReturnMint builds a
+// MINT that ParseSLP accepts for each token type that can mint, and refuses
+// one for an NFT1 child, which cannot.
+func TestCreateOpReturnMintTokenTypes(t *testing.T) {
+	for _, versionType := range []int{0x01, 0x81} {
+		script, err := CreateOpReturnMint(versionType, make([]byte, 32), NewMintBatonVout(2), 1)
+		if err != nil {
+			t.Fatalf("token type %#x: %v", versionType, err)
+		}
+		if _, err := v1parser.ParseSLP(script); err != nil {
+			t.Errorf("token type %#x: ParseSLP: %v", versionType, err)
+		}
+	}
+	if _, err := CreateOpReturnMint(0x41, make([]byte, 32), nil, 1); err == nil {
+		t.Error("token type 0x41: built a MINT, want an error")
+	}
+}
+
 func TestNft1ChildCreateOpReturnSend(t *testing.T) {
 	slpMsg, err := NFT1ChildSend(
 		make([]byte, 32),

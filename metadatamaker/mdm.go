@@ -79,7 +79,8 @@ func CreateOpReturnGenesis(
 	})
 }
 
-// CreateOpReturnMint creates serialized Mint op_return message
+// CreateOpReturnMint creates serialized Mint op_return message.  NFT1 child
+// tokens (0x41) cannot be minted.
 func CreateOpReturnMint(
 	versionType int,
 	tokenIDHex []byte,
@@ -87,6 +88,10 @@ func CreateOpReturnMint(
 	quantity uint64) ([]byte, error) {
 	if versionType != 0x01 && versionType != 0x41 && versionType != 0x81 {
 		return nil, errors.New("unknown versionType")
+	}
+
+	if versionType == 0x41 {
+		return nil, errors.New("NFT1 child tokens cannot be minted")
 	}
 
 	if len(tokenIDHex) != 32 {
