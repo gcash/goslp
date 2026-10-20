@@ -11,7 +11,9 @@ import (
 	"github.com/gcash/goslp/v1parser"
 )
 
-// GetSlpVersionType returns the SLP version number regardless of version/type
+// GetSlpVersionType returns the token type of the SLP message in slpPkScript.
+// It returns an error for any script ParseSLP rejects, which includes every
+// token type other than 0x01, 0x41 and 0x81.
 func GetSlpVersionType(slpPkScript []byte) (*uint8, error) {
 
 	// TODO: replace the following with a method to only parse the version number
@@ -23,20 +25,12 @@ func GetSlpVersionType(slpPkScript []byte) (*uint8, error) {
 	return &tokenType, nil
 }
 
-// GetSlpTokenID returns the Token ID regardless of SLP version/type
+// GetSlpTokenID parses the SLP message in the first output of tx and returns
+// its token ID, as GetSlpTokenIDFromMsg does.
 func GetSlpTokenID(tx *wire.MsgTx) ([]byte, error) {
 
 	if len(tx.TxOut) < 1 {
 		return nil, errors.New("transaction has no outputs")
-	}
-
-	slpVersion, err := GetSlpVersionType(tx.TxOut[0].PkScript)
-	if err != nil {
-		return nil, err
-	}
-
-	if !contains([]int{0x01, 0x41, 0x81}, int(*slpVersion)) {
-		return nil, errors.New("cannot parse token id for an unknown slp version type")
 	}
 
 	slpMsg, err := v1parser.ParseSLP(tx.TxOut[0].PkScript)
@@ -44,6 +38,13 @@ func GetSlpTokenID(tx *wire.MsgTx) ([]byte, error) {
 		return nil, err
 	}
 
+	return GetSlpTokenIDFromMsg(tx, slpMsg)
+}
+
+// GetSlpTokenIDFromMsg returns the token ID of tx, whose first output
+// ParseSLP parsed as slpMsg.  A GENESIS creates a token whose ID is its own
+// transaction hash, in the byte order MINT and SEND messages carry it in.
+func GetSlpTokenIDFromMsg(tx *wire.MsgTx, slpMsg v1parser.ParseResult) ([]byte, error) {
 	switch msg := slpMsg.(type) {
 	case *v1parser.SlpGenesis:
 		hash := tx.TxHash()
@@ -58,10 +59,11 @@ func GetSlpTokenID(tx *wire.MsgTx) ([]byte, error) {
 	case *v1parser.SlpSend:
 		return msg.TokenID(), nil
 	default:
-		return nil, fmt.Errorf("unknown error has occurred")
+		return nil, fmt.Errorf("unknown SLP message type %T", slpMsg)
 	}
 }
 
+//nolint:unused // GetSlpTokenID no longer needs it.
 func contains(s []int, e int) bool {
 	for _, a := range s {
 		if a == e {

@@ -7,6 +7,8 @@ import (
 
 	"github.com/gcash/bchd/wire"
 	"github.com/gcash/goslp"
+	"github.com/gcash/goslp/metadatamaker"
+	"github.com/gcash/goslp/v1parser"
 )
 
 func TestGetSlpTokenIDGenesis(t *testing.T) {
@@ -23,8 +25,88 @@ func TestGetSlpTokenIDGenesis(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	_, err = goslp.GetSlpTokenID(tx)
+	tokenID, err := goslp.GetSlpTokenID(tx)
 	if err != nil {
 		t.Fatal(err)
+	}
+	// MINT and SEND messages carry a token ID in the byte order a
+	// transaction hash is displayed in.
+	if got, want := hex.EncodeToString(tokenID), tx.TxHash().String(); got != want {
+		t.Errorf("token ID %s, want the transaction hash %s", got, want)
+	}
+
+	slpMsg, err := v1parser.ParseSLP(tx.TxOut[0].PkScript)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fromMsg, err := goslp.GetSlpTokenIDFromMsg(tx, slpMsg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(fromMsg, tokenID) {
+		t.Errorf("GetSlpTokenIDFromMsg returned %x, want %x", fromMsg, tokenID)
+	}
+}
+
+// TestGetSlpTokenIDMintSend checks that the token ID of a MINT or SEND is the
+// one its message carries.
+func TestGetSlpTokenIDMintSend(t *testing.T) {
+	tokenID := bytes.Repeat([]byte{0x01, 0x23, 0x45, 0x67}, 8)
+	mint, err := metadatamaker.TokenType1Mint(tokenID, nil, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	send, err := metadatamaker.TokenType1Send(tokenID, []uint64{1})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for name, script := range map[string][]byte{"MINT": mint, "SEND": send} {
+		tx := wire.NewMsgTx(1)
+		tx.AddTxOut(&wire.TxOut{PkScript: script})
+
+		got, err := goslp.GetSlpTokenID(tx)
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if !bytes.Equal(got, tokenID) {
+			t.Errorf("%s: GetSlpTokenID returned %x, want %x", name, got, tokenID)
+		}
+
+		slpMsg, err := v1parser.ParseSLP(script)
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		got, err = goslp.GetSlpTokenIDFromMsg(tx, slpMsg)
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if !bytes.Equal(got, tokenID) {
+			t.Errorf("%s: GetSlpTokenIDFromMsg returned %x, want %x", name, got, tokenID)
+		}
+	}
+}
+
+// otherMsg is a ParseResult that ParseSLP never returns.
+type otherMsg struct{ v1parser.ParseResult }
+
+// TestGetSlpTokenIDErrors checks the transactions and messages that have no
+// token ID.
+func TestGetSlpTokenIDErrors(t *testing.T) {
+	if _, err := goslp.GetSlpTokenID(wire.NewMsgTx(1)); err == nil {
+		t.Error("transaction with no outputs: got a token ID, want an error")
+	}
+
+	tx := wire.NewMsgTx(1)
+	tx.AddTxOut(&wire.TxOut{Value: 1000, PkScript: []byte{0x76, 0xa9}})
+	if _, err := goslp.GetSlpTokenID(tx); err == nil {
+		t.Error("non-SLP first output: got a token ID, want an error")
+	}
+
+	if _, err := goslp.GetSlpTokenIDFromMsg(tx, nil); err == nil {
+		t.Error("nil message: got a token ID, want an error")
+	}
+	if _, err := goslp.GetSlpTokenIDFromMsg(tx, otherMsg{}); err == nil {
+		t.Error("unknown message type: got a token ID, want an error")
 	}
 }
