@@ -64,12 +64,12 @@ func (r *SlpGenesis) TokenID() []byte {
 // Out of range vout returns nil.
 func (r *SlpGenesis) GetVoutValue(vout int) (*big.Int, bool) {
 
-	if r.MintBatonVout == vout {
-		return nil, true
+	if vout < 1 {
+		return nil, false
 	}
 
-	if vout == 0 {
-		return nil, false
+	if r.MintBatonVout == vout {
+		return nil, true
 	}
 
 	if vout == 1 {
@@ -108,12 +108,12 @@ func (r *SlpMint) TokenID() []byte {
 // Out of range vout returns nil.
 func (r *SlpMint) GetVoutValue(vout int) (*big.Int, bool) {
 
-	if r.MintBatonVout == vout {
-		return nil, true
+	if vout < 1 {
+		return nil, false
 	}
 
-	if vout == 0 {
-		return nil, false
+	if r.MintBatonVout == vout {
+		return nil, true
 	}
 
 	if vout == 1 {
@@ -151,11 +151,7 @@ func (r *SlpSend) TokenID() []byte {
 // the index is a mint baton for a given transaction output index.
 // Out of range vout returns nil.
 func (r *SlpSend) GetVoutValue(vout int) (*big.Int, bool) {
-	if vout == 0 {
-		return nil, false
-	}
-
-	if vout > len(r.Amounts) {
+	if vout < 1 || vout > len(r.Amounts) {
 		return nil, false
 	}
 

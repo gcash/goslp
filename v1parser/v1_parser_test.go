@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"math"
 	"math/big"
 	"os"
 	"reflect"
@@ -280,6 +281,60 @@ func TestParseResultPointerReceivers(t *testing.T) {
 		}
 		if !reflect.PointerTo(typ).Implements(iface) {
 			t.Errorf("%v does not implement ParseResult", reflect.PointerTo(typ))
+		}
+	}
+}
+
+// TestGetVoutValueRange checks GetVoutValue at and past the ends of each
+// message's outputs.  Output 0 and negative outputs have no amount and are
+// never a baton, and only the output a GENESIS or MINT names is its baton.
+func TestGetVoutValueRange(t *testing.T) {
+	const tokenID = "d6876f0fce603be43f15d34348bb1de1a8d688e1152596543da033a060cff798"
+	genesis := func(baton string) string {
+		return "6a04534c50000101" + "0747454e45534953" + "4c004c004c004c00" + "0100" + baton + "080000000000000064"
+	}
+	mint := func(baton string) string {
+		return "6a04534c50000101" + "044d494e54" + "20" + tokenID + baton + "080000000000000064"
+	}
+
+	type want struct {
+		amount *big.Int
+		baton  bool
+	}
+	var none want
+	tests := []struct {
+		name   string
+		script string
+		wants  map[int]want
+	}{
+		{"GENESIS, baton on 2", genesis("0102"), map[int]want{
+			math.MinInt: none, -1: none, 0: none, 1: {big.NewInt(100), false}, 2: {nil, true}, 3: none}},
+		{"GENESIS, no baton", genesis("4c00"), map[int]want{
+			math.MinInt: none, -1: none, 0: none, 1: {big.NewInt(100), false}, 2: none}},
+		{"MINT, baton on 2", mint("0102"), map[int]want{
+			math.MinInt: none, -1: none, 0: none, 1: {big.NewInt(100), false}, 2: {nil, true}, 3: none}},
+		{"MINT, no baton", mint("4c00"), map[int]want{
+			math.MinInt: none, -1: none, 0: none, 1: {big.NewInt(100), false}, 2: none}},
+		{"SEND", validSendScript, map[int]want{
+			math.MinInt: none, -1: none, 0: none, 1: {big.NewInt(6000000000), false}, 2: none}},
+	}
+	for _, test := range tests {
+		script, err := hex.DecodeString(test.script)
+		if err != nil {
+			t.Fatalf("%s: %v", test.name, err)
+		}
+		slpMsg, err := ParseSLP(script)
+		if err != nil {
+			t.Fatalf("%s: %v", test.name, err)
+		}
+		for vout, w := range test.wants {
+			amount, baton := slpMsg.GetVoutValue(vout)
+			amountOK := amount == nil && w.amount == nil ||
+				amount != nil && w.amount != nil && amount.Cmp(w.amount) == 0
+			if !amountOK || baton != w.baton {
+				t.Errorf("%s: GetVoutValue(%d) = %v, %v, want %v, %v",
+					test.name, vout, amount, baton, w.amount, w.baton)
+			}
 		}
 	}
 }
