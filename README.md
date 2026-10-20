@@ -1,5 +1,7 @@
 # goslp
 
+[![Build Status](https://github.com/gcash/goslp/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gcash/goslp/actions/workflows/ci.yml)
+
 Golang packages for the Simple Ledger Protocol (SLP).
 
 This is a copy of `github.com/simpleledgerinc/goslp` at commit 3c2e5f2ef33f,
