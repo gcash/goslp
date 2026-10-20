@@ -146,15 +146,15 @@ func pushSlpData(buf []byte) ([]byte, error) {
 
 	if bufLen == 0 {
 		return []byte{0x4C, 0x00}, nil
-	} else if bufLen < 0x4E {
+	} else if bufLen < 0x4C {
 		return bytes.Join([][]byte{{uint8(bufLen)}, buf}, []byte{}), nil
-	} else if bufLen < 0xFF {
+	} else if bufLen <= 0xFF {
 		return bytes.Join([][]byte{{0x4C, uint8(bufLen)}, buf}, []byte{}), nil
-	} else if bufLen < 0xFFFF {
+	} else if bufLen <= 0xFFFF {
 		tmp := make([]byte, 2)
 		binary.LittleEndian.PutUint16(tmp, uint16(bufLen))
 		return bytes.Join([][]byte{{0x4D}, tmp, buf}, []byte{}), nil
-	} else if uint64(bufLen) < 0xFFFFFFFF {
+	} else if uint64(bufLen) <= 0xFFFFFFFF {
 		tmp := make([]byte, 4)
 		binary.LittleEndian.PutUint32(tmp, uint32(bufLen))
 		return bytes.Join([][]byte{{0x4E}, tmp, buf}, []byte{}), nil
