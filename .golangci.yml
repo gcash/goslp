@@ -1,5 +1,10 @@
 version: "2"
 
+run:
+  # Lint the go-fuzz harness too, which only builds with the gofuzz tag.
+  build-tags:
+    - gofuzz
+
 linters:
   enable:
     - gocritic

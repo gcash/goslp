@@ -1,3 +1,5 @@
+//go:build gofuzz
+
 package v1parser
 
 import (
@@ -31,7 +33,7 @@ type jsResp struct {
 	ErrorMsg *string
 }
 
-// Fuzz implements interface for running github.com/dvyuko/go-fuzz
+// Fuzz implements interface for running github.com/dvyukov/go-fuzz
 // For more information see ../fuzz/README.md
 func Fuzz(data []byte) int {
 
