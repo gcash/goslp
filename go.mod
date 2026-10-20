@@ -1,8 +1,7 @@
-module github.com/simpleledgerinc/goslp
+module github.com/gcash/goslp
 
-go 1.15
+go 1.26.0
 
-require (
-	github.com/dvyukov/go-fuzz v0.0.0-20210103155950-6a8e9d1f2415 // indirect
-	github.com/gcash/bchd v0.17.1
-)
+require github.com/gcash/bchd v0.22.2
+
+require github.com/dchest/siphash v1.2.3 // indirect

@@ -3,7 +3,7 @@ package metadatamaker
 import (
 	"testing"
 
-	"github.com/simpleledgerinc/goslp/v1parser"
+	"github.com/gcash/goslp/v1parser"
 )
 
 func TestNft1GroupCreateOpReturnGenesis(t *testing.T) {

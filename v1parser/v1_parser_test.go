@@ -3,7 +3,7 @@ package v1parser
 import (
 	"encoding/hex"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"math/big"
 	"os"
 	"reflect"
@@ -18,7 +18,10 @@ func TestSlpMessageUnitTests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	data, err := ioutil.ReadAll(inputTestsFile)
+	data, err := io.ReadAll(inputTestsFile)
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer inputTestsFile.Close()
 
 	// TestCase is the json object parsed from v1_parser_test_op_return.json
@@ -190,6 +193,9 @@ func TestSendParseSlp(t *testing.T) {
 		t.Error("incorrect send qty")
 	}
 	tokenID, err := hex.DecodeString("d6876f0fce603be43f15d34348bb1de1a8d688e1152596543da033a060cff798")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !reflect.DeepEqual(slpMsg.(*SlpSend).TokenID(), tokenID) {
 		t.Error("incorrect tokenID")
 	}
@@ -205,6 +211,9 @@ func TestMintParseSlp(t *testing.T) {
 		t.Error("incorrect mint qty")
 	}
 	tokenID, err := hex.DecodeString("d6876f0fce603be43f15d34348bb1de1a8d688e1152596543da033a060cff798")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !reflect.DeepEqual(slpMsg.(*SlpMint).TokenID(), tokenID) {
 		t.Error("incorrect tokenID")
 	}

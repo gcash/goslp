@@ -2,9 +2,15 @@
 
 Golang packages for the Simple Ledger Protocol (SLP).
 
+This is a copy of `github.com/simpleledgerinc/goslp` at commit 3c2e5f2ef33f,
+the version bchd used, taken from the Go module cache after the original
+repository was deleted. Its earlier history is not included.
+
+    go get github.com/gcash/goslp
+
 ### v1parser - for parsing transaction metadata
 
-This package is used for parsing SLP metadata from the SLP transaction's input 0 scriptPubKey.
+This package is used for parsing SLP metadata from the scriptPubKey of the SLP transaction's first output.
 
 ```go
 // here is an example marshaled SLP message extracted from transaction's scriptPubKey.
@@ -17,7 +23,7 @@ slpMsg, err := v1parser.ParseSLP(scriptPubKey)
 
 ```
 
-This usage, [here](https://github.com/simpleledgerinc/bchd/blob/slp-index/bchrpc/server.go#L1240), in BCHD gRPC server provides a good example usage of how to interact with the unmarshalled SLP metadata object.
+The gRPC server in [bchd](https://github.com/gcash/bchd/blob/master/bchrpc/server.go) uses the unmarshalled SLP metadata object throughout, which makes it a good example of how to work with it.
 
 Differential fuzzer testing has been performed with the [slp-validate.js](https://github.com/simpleledger/slp-validate) npm package, and can be reproduced following the instructions in the `./fuzz` directory.
 

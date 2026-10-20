@@ -1,3 +1,6 @@
+// Package metadatamaker builds the OP_RETURN scripts that carry SLP metadata
+// in the first output of type 1, NFT1 group and NFT1 child token
+// transactions.
 package metadatamaker
 
 import (
@@ -57,13 +60,13 @@ func CreateOpReturnGenesis(
 	}
 
 	return encodeSlpScript([][]byte{
-		[]byte{uint8(versionType)},
+		{uint8(versionType)},
 		[]byte("GENESIS"),
 		ticker,
 		name,
 		documentURL,
 		documentHash,
-		[]byte{uint8(decimals)},
+		{uint8(decimals)},
 		mintBatonVoutBytes,
 		makeU64BigEndianBytes(quantity),
 	})
@@ -92,7 +95,7 @@ func CreateOpReturnMint(
 	}
 
 	return encodeSlpScript([][]byte{
-		[]byte{uint8(versionType)},
+		{uint8(versionType)},
 		[]byte("MINT"),
 		tokenIDHex,
 		mintBatonVoutBytes,
@@ -151,7 +154,7 @@ func pushSlpData(buf []byte) ([]byte, error) {
 		tmp := make([]byte, 2)
 		binary.LittleEndian.PutUint16(tmp, uint16(bufLen))
 		return bytes.Join([][]byte{{0x4D}, tmp, buf}, []byte{}), nil
-	} else if bufLen < 0xFFFFFFFF {
+	} else if uint64(bufLen) < 0xFFFFFFFF {
 		tmp := make([]byte, 4)
 		binary.LittleEndian.PutUint32(tmp, uint32(bufLen))
 		return bytes.Join([][]byte{{0x4E}, tmp, buf}, []byte{}), nil

@@ -1,3 +1,6 @@
+// Package goslp has helpers for Simple Ledger Protocol (SLP) token
+// transactions that work across SLP versions and token types.  Its v1parser
+// package parses SLP metadata, and its metadatamaker package builds it.
 package goslp
 
 import (
@@ -5,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/gcash/bchd/wire"
-	"github.com/simpleledgerinc/goslp/v1parser"
+	"github.com/gcash/goslp/v1parser"
 )
 
 // GetSlpVersionType returns the SLP version number regardless of version/type

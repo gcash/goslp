@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/gcash/bchd/wire"
-	"github.com/simpleledgerinc/goslp"
+	"github.com/gcash/goslp"
 )
 
 func TestGetSlpTokenIDGenesis(t *testing.T) {

@@ -1,3 +1,5 @@
+// Package v1parser parses the SLP metadata that a version 1 SLP transaction
+// carries in the OP_RETURN script of its first output.
 package v1parser
 
 import (
@@ -174,7 +176,7 @@ func ParseSLP(scriptPubKey []byte) (ParseResult, error) {
 	itObj := scriptPubKey
 
 	extractU8 := func() int {
-		r := uint8(itObj[it : it+1][0])
+		r := itObj[it : it+1][0]
 		it++
 		return int(r)
 	}
@@ -201,11 +203,11 @@ func ParseSLP(scriptPubKey []byte) (ParseResult, error) {
 		return int(r)
 	}
 
-	extractU64 := func(littleEndian bool) int {
+	extractU64 := func(littleEndian bool) uint64 {
 		if littleEndian {
-			return int(binary.LittleEndian.Uint64(itObj[it : it+8]))
+			return binary.LittleEndian.Uint64(itObj[it : it+8])
 		}
-		return int(binary.BigEndian.Uint64(itObj[it : it+8]))
+		return binary.BigEndian.Uint64(itObj[it : it+8])
 	}
 
 	if len(itObj) == 0 {
@@ -266,9 +268,18 @@ func ParseSLP(scriptPubKey []byte) (ParseResult, error) {
 			return extractU32(false), nil
 		}
 		if len(itObj) == 8 {
-			return extractU64(false), nil
+			return int(extractU64(false)), nil
 		}
 		return 0, errors.New("extraction of number from buffer failed")
+	}
+
+	// bufferToU64 reads an 8-byte amount, which an int, 32 bits on some
+	// platforms, cannot hold.
+	bufferToU64 := func() (uint64, error) {
+		if len(itObj) != 8 {
+			return 0, errors.New("extraction of number from buffer failed")
+		}
+		return extractU64(false), nil
 	}
 
 	checkValidTokenID := func(tokenID []byte) bool {
@@ -433,7 +444,7 @@ func ParseSLP(scriptPubKey []byte) (ParseResult, error) {
 			return nil, errors.New("initialQty must be provided as an 8-byte buffer")
 		}
 
-		qty, err := bufferToBN()
+		qty, err := bufferToU64()
 		if err != nil {
 			return nil, err
 		}
@@ -460,7 +471,7 @@ func ParseSLP(scriptPubKey []byte) (ParseResult, error) {
 			DocumentHash:  documentHash,
 			Decimals:      decimals,
 			MintBatonVout: mintBatonVout,
-			Qty:           uint64(qty),
+			Qty:           qty,
 		}, nil
 
 	case transactionTypeMint:
@@ -514,7 +525,7 @@ func ParseSLP(scriptPubKey []byte) (ParseResult, error) {
 			return nil, errors.New("additional_qty must be provided as an 8-byte buffer")
 		}
 
-		qty, err := bufferToBN()
+		qty, err := bufferToU64()
 		if err != nil {
 			return nil, err
 		}
@@ -523,7 +534,7 @@ func ParseSLP(scriptPubKey []byte) (ParseResult, error) {
 			tokenType:     tokenType,
 			tokenID:       tokenID,
 			MintBatonVout: mintBatonVout,
-			Qty:           uint64(qty),
+			Qty:           qty,
 		}, nil
 
 	case transactionTypeSend:
@@ -553,11 +564,11 @@ func ParseSLP(scriptPubKey []byte) (ParseResult, error) {
 				return nil, errors.New("amount string size not 8 bytes")
 			}
 
-			value, err := bufferToBN()
+			value, err := bufferToU64()
 			if err != nil {
 				return nil, err
 			}
-			amounts = append(amounts, uint64(value))
+			amounts = append(amounts, value)
 
 			cit++
 			if cit < len(chunks) {

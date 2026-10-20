@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -51,7 +51,7 @@ func Fuzz(data []byte) int {
 	defer resp.Body.Close()
 
 	// print the js parsed result
-	r, _ := ioutil.ReadAll(resp.Body)
+	r, _ := io.ReadAll(resp.Body)
 
 	var j *jsResp
 	err = json.Unmarshal(r, &j)
@@ -68,7 +68,7 @@ func Fuzz(data []byte) int {
 			return -1
 		}
 		panic(err.Error())
-	} else if j.Success == false {
+	} else if !j.Success {
 		panic("js parser or json unmarshaling failed, but goslp did not return an error")
 	}
 
