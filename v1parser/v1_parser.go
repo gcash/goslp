@@ -32,7 +32,8 @@ var (
 	ErrUnsupportedSlpVersion = errors.New("token_type not token-type1, nft1-group, or nft1-child")
 )
 
-// ParseResult returns the parsed result.
+// ParseResult is a parsed SLP message.  ParseSLP returns a *SlpGenesis,
+// *SlpMint or *SlpSend.
 type ParseResult interface {
 	TokenType() TokenType
 	TokenID() []byte
@@ -49,19 +50,19 @@ type SlpGenesis struct {
 }
 
 // TokenType returns the TokenType per the ParserResult interface
-func (r SlpGenesis) TokenType() TokenType {
+func (r *SlpGenesis) TokenType() TokenType {
 	return r.tokenType
 }
 
 // TokenID returns the TokenID per the ParserResult interface
-func (r SlpGenesis) TokenID() []byte {
+func (r *SlpGenesis) TokenID() []byte {
 	return nil
 }
 
 // GetVoutValue returns the output amount or boolean flag indicating
 // the index is a mint baton for a given transaction output index.
 // Out of range vout returns nil.
-func (r SlpGenesis) GetVoutValue(vout int) (*big.Int, bool) {
+func (r *SlpGenesis) GetVoutValue(vout int) (*big.Int, bool) {
 
 	if r.MintBatonVout == vout {
 		return nil, true
@@ -78,7 +79,7 @@ func (r SlpGenesis) GetVoutValue(vout int) (*big.Int, bool) {
 }
 
 // TotalSlpMsgOutputValue computes the output amount transferred in a transaction
-func (r SlpGenesis) TotalSlpMsgOutputValue() (*big.Int, error) {
+func (r *SlpGenesis) TotalSlpMsgOutputValue() (*big.Int, error) {
 	total := big.NewInt(0)
 	total.Add(total, new(big.Int).SetUint64(r.Qty))
 	return total, nil
@@ -93,19 +94,19 @@ type SlpMint struct {
 }
 
 // TokenType returns the TokenType per the ParserResult interface
-func (r SlpMint) TokenType() TokenType {
+func (r *SlpMint) TokenType() TokenType {
 	return r.tokenType
 }
 
 // TokenID returns the TokenID per the ParserResult interface
-func (r SlpMint) TokenID() []byte {
+func (r *SlpMint) TokenID() []byte {
 	return r.tokenID
 }
 
 // GetVoutValue returns the output amount or boolean flag indicating
 // the index is a mint baton for a given transaction output index.
 // Out of range vout returns nil.
-func (r SlpMint) GetVoutValue(vout int) (*big.Int, bool) {
+func (r *SlpMint) GetVoutValue(vout int) (*big.Int, bool) {
 
 	if r.MintBatonVout == vout {
 		return nil, true
@@ -122,7 +123,7 @@ func (r SlpMint) GetVoutValue(vout int) (*big.Int, bool) {
 }
 
 // TotalSlpMsgOutputValue computes the output amount transferred in a transaction
-func (r SlpMint) TotalSlpMsgOutputValue() (*big.Int, error) {
+func (r *SlpMint) TotalSlpMsgOutputValue() (*big.Int, error) {
 	total := big.NewInt(0)
 	total.Add(total, new(big.Int).SetUint64(r.Qty))
 
@@ -137,19 +138,19 @@ type SlpSend struct {
 }
 
 // TokenType returns the TokenType per the ParserResult interface
-func (r SlpSend) TokenType() TokenType {
+func (r *SlpSend) TokenType() TokenType {
 	return r.tokenType
 }
 
 // TokenID returns the TokenID per the ParserResult interface
-func (r SlpSend) TokenID() []byte {
+func (r *SlpSend) TokenID() []byte {
 	return r.tokenID
 }
 
 // GetVoutValue returns the output amount or boolean flag indicating
 // the index is a mint baton for a given transaction output index.
 // Out of range vout returns nil.
-func (r SlpSend) GetVoutValue(vout int) (*big.Int, bool) {
+func (r *SlpSend) GetVoutValue(vout int) (*big.Int, bool) {
 	if vout == 0 {
 		return nil, false
 	}
@@ -162,7 +163,7 @@ func (r SlpSend) GetVoutValue(vout int) (*big.Int, bool) {
 }
 
 // TotalSlpMsgOutputValue computes the output amount transferred in a transaction
-func (r SlpSend) TotalSlpMsgOutputValue() (*big.Int, error) {
+func (r *SlpSend) TotalSlpMsgOutputValue() (*big.Int, error) {
 	total := big.NewInt(0)
 	for _, amt := range r.Amounts {
 		total.Add(total, new(big.Int).SetUint64(amt))

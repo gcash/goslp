@@ -268,6 +268,22 @@ func TestMintParseSlp(t *testing.T) {
 	}
 }
 
+// TestParseResultPointerReceivers checks that only pointers to the parse
+// results implement ParseResult, as ParseSLP returns them, so that a type
+// assertion to a value type fails to compile instead of never matching.
+func TestParseResultPointerReceivers(t *testing.T) {
+	iface := reflect.TypeOf((*ParseResult)(nil)).Elem()
+	for _, v := range []any{SlpGenesis{}, SlpMint{}, SlpSend{}} {
+		typ := reflect.TypeOf(v)
+		if typ.Implements(iface) {
+			t.Errorf("%v implements ParseResult, want only %v to", typ, reflect.PointerTo(typ))
+		}
+		if !reflect.PointerTo(typ).Implements(iface) {
+			t.Errorf("%v does not implement ParseResult", reflect.PointerTo(typ))
+		}
+	}
+}
+
 // validSendScript is a type 1 SEND of 6000000000 base units to output 1.
 const validSendScript = "6a04534c500001010453454e4420d6876f0fce603be43f15d34348bb1de1a8d688e1152596543da033a060cff798080000000165a0bc00"
 
