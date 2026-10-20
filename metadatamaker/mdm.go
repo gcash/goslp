@@ -10,9 +10,16 @@ import (
 	"fmt"
 )
 
-// MintBatonVout used so that vout value can be set as nil
+// MintBatonVout is the output a GENESIS or MINT puts its mint baton on.
+// Create one with NewMintBatonVout; a nil *MintBatonVout means no baton.
 type MintBatonVout struct {
 	vout int
+}
+
+// NewMintBatonVout returns a MintBatonVout for output vout, which the
+// GENESIS and MINT builders require to be from 2 to 255.
+func NewMintBatonVout(vout int) *MintBatonVout {
+	return &MintBatonVout{vout: vout}
 }
 
 // CreateOpReturnGenesis creates serialized Genesis op_return message

@@ -40,7 +40,7 @@ func TestCreateOpReturnGenesis(t *testing.T) {
 }
 
 func TestCreateOpReturnGenesisBadMintVout(t *testing.T) {
-	vouts := []*MintBatonVout{{vout: 0}, {vout: 1}}
+	vouts := []*MintBatonVout{{vout: 0}, {vout: 1}, {vout: 256}}
 	for _, vout := range vouts {
 		versionType := 1
 		ticker := []byte("TEST")
@@ -60,14 +60,14 @@ func TestCreateOpReturnGenesisBadMintVout(t *testing.T) {
 			vout,
 			quantity,
 		)
-		if err.Error() != "mintBatonVout out of range (0x02 < > 0xFF)" {
-			t.Fatal(err.Error())
+		if err == nil || err.Error() != "mintBatonVout out of range (0x02 < > 0xFF)" {
+			t.Fatalf("vout %d: got error %v, want out of range", vout.vout, err)
 		}
 	}
 }
 
 func TestCreateOpReturnMintBadMintVout(t *testing.T) {
-	vouts := []*MintBatonVout{{vout: 0}, {vout: 1}}
+	vouts := []*MintBatonVout{{vout: 0}, {vout: 1}, {vout: 256}}
 	for _, vout := range vouts {
 		versionType := 1
 		tokenID := make([]byte, 32)
@@ -79,8 +79,8 @@ func TestCreateOpReturnMintBadMintVout(t *testing.T) {
 			vout,
 			quantity,
 		)
-		if err.Error() != "mintBatonVout out of range (0x02 < > 0xFF)" {
-			t.Error(err.Error())
+		if err == nil || err.Error() != "mintBatonVout out of range (0x02 < > 0xFF)" {
+			t.Errorf("vout %d: got error %v, want out of range", vout.vout, err)
 		}
 	}
 }

@@ -16,7 +16,10 @@ This package is used for parsing SLP metadata from the scriptPubKey of the SLP t
 
 ```go
 // here is an example marshaled SLP message extracted from transaction's scriptPubKey.
-scriptPubKey := hex.DecodeString("6a04534c500001010453454e4420c4b0d62156b3fa5c8f3436079b5394f7edc1bef5dc1cd2f9d0c4d46f82cca47908000000000000000108000000000000000408000000000000005a")
+scriptPubKey, err := hex.DecodeString("6a04534c500001010453454e4420c4b0d62156b3fa5c8f3436079b5394f7edc1bef5dc1cd2f9d0c4d46f82cca47908000000000000000108000000000000000408000000000000005a")
+if err != nil {
+    // handle the error ...
+}
 
 // get the unmarshalled slp message
 slpMsg, err := v1parser.ParseSLP(scriptPubKey)
@@ -36,6 +39,9 @@ This package is used for creating marshaled SLP metadata for adding to a transac
 **Genesis** - use CreateOpReturnGenesis, NFT1GroupGenesis, or NFT1ChildGenesis
 
 ```go
+// put the mint baton on output 2, or pass nil for no baton
+mintBatonVout := NewMintBatonVout(2)
+
 scriptPubKey, err := CreateOpReturnGenesis(
       versionType,
       ticker,
@@ -54,10 +60,13 @@ scriptPubKey, err := CreateOpReturnGenesis(
 **Mint** - use CreateOpReturnMint or NFT1GroupMint
 
 ```go
+// pass the baton on to output 2, or pass nil to end the minting
+mintBatonVout := NewMintBatonVout(2)
+
 scriptPubKey, err := CreateOpReturnMint(
     versionType,
     tokenID,
-    vout,
+    mintBatonVout,
     quantity,
 )
 

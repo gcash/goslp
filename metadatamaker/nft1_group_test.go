@@ -37,7 +37,7 @@ func TestNft1GroupCreateOpReturnGenesis(t *testing.T) {
 }
 
 func TestNft1GroupCreateOpReturnGenesis_BadMintVout(t *testing.T) {
-	vouts := []*MintBatonVout{{vout: 0}, {vout: 1}}
+	vouts := []*MintBatonVout{{vout: 0}, {vout: 1}, {vout: 256}}
 	for _, vout := range vouts {
 		ticker := []byte("TEST")
 		name := []byte("some name")
@@ -55,14 +55,14 @@ func TestNft1GroupCreateOpReturnGenesis_BadMintVout(t *testing.T) {
 			vout,
 			quantity,
 		)
-		if err.Error() != "mintBatonVout out of range (0x02 < > 0xFF)" {
-			t.Fatal(err.Error())
+		if err == nil || err.Error() != "mintBatonVout out of range (0x02 < > 0xFF)" {
+			t.Fatalf("vout %d: got error %v, want out of range", vout.vout, err)
 		}
 	}
 }
 
 func TestNft1GroupCreateOpReturnMint_BadMintVout(t *testing.T) {
-	vouts := []*MintBatonVout{{vout: 0}, {vout: 1}}
+	vouts := []*MintBatonVout{{vout: 0}, {vout: 1}, {vout: 256}}
 	for _, vout := range vouts {
 		tokenID := make([]byte, 32)
 		quantity := uint64(1)
@@ -72,8 +72,8 @@ func TestNft1GroupCreateOpReturnMint_BadMintVout(t *testing.T) {
 			vout,
 			quantity,
 		)
-		if err.Error() != "mintBatonVout out of range (0x02 < > 0xFF)" {
-			t.Error(err.Error())
+		if err == nil || err.Error() != "mintBatonVout out of range (0x02 < > 0xFF)" {
+			t.Errorf("vout %d: got error %v, want out of range", vout.vout, err)
 		}
 	}
 }
