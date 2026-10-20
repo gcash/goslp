@@ -234,19 +234,27 @@ func ParseSLP(scriptPubKey []byte) (ParseResult, error) {
 			}
 			return cnt
 		} else if cnt == OP_PUSHDATA1 {
-			if it+1 >= len(itObj) {
+			if it+1 > len(itObj) {
 				it--
 				return -1
 			}
 			return extractU8()
 		} else if cnt == OP_PUSHDATA2 {
-			if it+2 >= len(itObj) {
+			if it+2 > len(itObj) {
 				it--
 				return -1
 			}
 			return extractU16(true)
 		} else if cnt == OP_PUSHDATA4 {
-			if it+4 >= len(itObj) {
+			if it+4 > len(itObj) {
+				it--
+				return -1
+			}
+			// Compare the length with the bytes left before extractU32
+			// converts it to an int.  On 32-bit platforms a length of 2^31
+			// or more would come out negative and end the loop below as if
+			// the script ended there.
+			if uint64(binary.LittleEndian.Uint32(itObj[it:it+4])) > uint64(len(itObj)-it-4) {
 				it--
 				return -1
 			}
@@ -288,7 +296,7 @@ func ParseSLP(scriptPubKey []byte) (ParseResult, error) {
 
 	chunks := make([][]byte, 0)
 	for chunkLen := extractPushdata(); chunkLen >= 0; chunkLen = extractPushdata() {
-		if it+chunkLen > len(itObj) {
+		if chunkLen > len(itObj)-it {
 			return nil, errors.New("pushdata data extraction failed")
 		}
 

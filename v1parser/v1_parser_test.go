@@ -3,6 +3,7 @@ package v1parser
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"io"
 	"math/big"
 	"os"
@@ -216,5 +217,68 @@ func TestMintParseSlp(t *testing.T) {
 	}
 	if !reflect.DeepEqual(slpMsg.(*SlpMint).TokenID(), tokenID) {
 		t.Error("incorrect tokenID")
+	}
+}
+
+// validSendScript is a type 1 SEND of 6000000000 base units to output 1.
+const validSendScript = "6a04534c500001010453454e4420d6876f0fce603be43f15d34348bb1de1a8d688e1152596543da033a060cff798080000000165a0bc00"
+
+// TestParseSLPPushPastEnd checks that a push running past the end of the
+// script is rejected.  The PUSHDATA4 lengths near and above 2^31 are for
+// 32-bit platforms, where they overflow an int.
+func TestParseSLPPushPastEnd(t *testing.T) {
+	send, err := hex.DecodeString(validSendScript)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ParseSLP(send); err != nil {
+		t.Fatalf("valid SEND: %v", err)
+	}
+
+	tests := []struct {
+		name   string
+		script string
+	}{
+		{"PUSHDATA4 of 2^31-1 bytes", "6a4effffff7f00000000"},
+		{"lokad ID, PUSHDATA4 of 2^31-1 bytes", "6a04534c50004effffff7f00"},
+		{"lokad ID, PUSHDATA4 of 2^32-1 bytes", "6a04534c50004effffffff00"},
+		{"SEND, PUSHDATA4 length 2^31 and no data", validSendScript + "4e00000080"},
+		{"SEND, PUSHDATA4 length 2^32-1 and no data", validSendScript + "4effffffff"},
+		{"SEND, truncated PUSHDATA1 data", validSendScript + "4c05aabb"},
+		{"SEND, truncated PUSHDATA2 data", validSendScript + "4d0500aabb"},
+		{"SEND, truncated PUSHDATA4 data", validSendScript + "4e05000000aabb"},
+	}
+	for _, test := range tests {
+		script, err := hex.DecodeString(test.script)
+		if err != nil {
+			t.Fatalf("%s: %v", test.name, err)
+		}
+		if _, err := ParseSLP(script); err == nil {
+			t.Errorf("%s: parsed, want an error", test.name)
+		}
+	}
+}
+
+// TestParseSLPEmptyFinalPush checks that an empty PUSHDATA1, 2 or 4 at the
+// end of the script is read as an empty chunk, as slp-validate reads it.  So
+// an unsupported token type is still reported as one, and a SEND whose last
+// amount is empty fails.
+func TestParseSLPEmptyFinalPush(t *testing.T) {
+	for _, push := range []string{"4c00", "4d0000", "4e00000000"} {
+		script, err := hex.DecodeString("6a04534c50000102" + push)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := ParseSLP(script); !errors.Is(err, ErrUnsupportedSlpVersion) {
+			t.Errorf("token type 2, empty push %s: got error %v, want %v", push, err, ErrUnsupportedSlpVersion)
+		}
+
+		script, err = hex.DecodeString(validSendScript + push)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := ParseSLP(script); err == nil {
+			t.Errorf("SEND, empty push %s: parsed, want an error", push)
+		}
 	}
 }
